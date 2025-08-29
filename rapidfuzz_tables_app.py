@@ -1,15 +1,14 @@
 from rapidfuzz import process, fuzz
-import mysql.connector
+import mysql.connector as mc
 
 def connect_to_azure_sql(server, database, username, password):
-    return mysql.connector.connect(
+    return mc.connect(
         host=server,
         user=username,
         password=password,
         database=database
     )
 
-    return mysql.connector.connect(connection_string)
 
 def fuzzy_match(queryRecord, choices, score_cutoff=0):
     scorers = [fuzz.WRatio, fuzz.QRatio, fuzz.token_set_ratio, fuzz.ratio]
@@ -77,8 +76,8 @@ def execute_dynamic_matching(params_dict, score_cutoff=0):
     conn2 = connect_to_azure_sql(
         server=params_dict.get("server2", ""),
         database=params_dict.get("database2", ""),
-        username=params_dict.get("username2", ""),
-        password=params_dict.get("password2", "")
+        username=params_dict.get("username", ""),
+        password=params_dict.get("password", "")
     )
     cursor2 = conn.cursor()
 
@@ -128,15 +127,16 @@ def execute_dynamic_matching(params_dict, score_cutoff=0):
 
 
 params_dict = {
+    #Usuarios
     "server": "localhost",
     "database": "dbo",
     "username": "root",
     "password": "",
+    
     #Clientes
      "server2": "localhost",
     "database2": "crm",
-    "username2": "root",
-    "password2": "",
+    
     
     "sourceSchema": "dbo",
     "sourceTable": "Usuarios",
@@ -147,5 +147,5 @@ params_dict = {
     }
 }
 
-resultados = execute_dynamic_matching(params_dict, score_cutoff=80)
+resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
 print(resultados)

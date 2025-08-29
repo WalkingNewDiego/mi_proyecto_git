@@ -41,3 +41,15 @@ src_dest_mappings: Diccionario que indica qué columna de la tabla origen se com
 
 score_cutoff: Valor mínimo de similitud (de 0 a 100) para considerar una coincidencia.
 
+
+
+
+documentacion rapidfuzz
+se elimino rebundancia de variable en params dict("username2": "root",
+    "password2": "",) para solo utilizar username y password
+
+se elimino la siguiente linea sin utilizar 
+    return mysql.connector.connect(connection_string)
+
+se agrego alias a import mysql.connector as mc
+y se modifico respectivamente las lineas de acuerdo al nuevo nombre
