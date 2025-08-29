@@ -79,7 +79,7 @@ def execute_dynamic_matching(params_dict, score_cutoff=0):
         username=params_dict.get("username", ""),
         password=params_dict.get("password", "")
     )
-    cursor2 = conn.cursor()
+    cursor2 = conn2.cursor()
 
     if 'src_dest_mappings' not in params_dict or not params_dict['src_dest_mappings']:
         raise ValueError("Debe proporcionar src_dest_mappings con columnas origen y destino")
@@ -131,7 +131,7 @@ params_dict = {
     "server": "localhost",
     "database": "dbo",
     "username": "root",
-    "password": "",
+    "password": "1234",
     
     #Clientes
      "server2": "localhost",
@@ -143,7 +143,7 @@ params_dict = {
     "destSchema": "crm",
     "destTable": "Clientes",
     "src_dest_mappings": {
-        "first_name": "nombre"
+        "email": "email"
     }
 }
 
