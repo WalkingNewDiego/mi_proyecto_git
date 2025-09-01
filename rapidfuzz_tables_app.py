@@ -1,4 +1,5 @@
 from fuzzy_match_utils import execute_dynamic_matching
+import pandas as pd
 
 params_dict = {
     # Usuarios
@@ -19,4 +20,7 @@ params_dict = {
 }
 
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
-print(resultados)
+
+# Convertir resultados a DataFrame
+df = pd.DataFrame(resultados)
+print(df)
