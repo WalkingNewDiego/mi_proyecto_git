@@ -1,6 +1,15 @@
 from fuzzy_match_utils import execute_dynamic_matching
 import pandas as pd
 
+def display_results(resultados, as_dataframe=True):
+    if as_dataframe:
+        df = pd.DataFrame(resultados)
+        print(df)
+        return df
+    else:
+        print(resultados)
+        return resultados
+
 params_dict = {
     # Usuarios
     "server": "localhost",
@@ -21,6 +30,8 @@ params_dict = {
 
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
 
-# Convertir resultados a DataFrame
-df = pd.DataFrame(resultados)
-print(df)
+# Preguntar al usuario
+opcion = input("¿Mostrar resultados como DataFrame? (s/n): ").strip().lower()
+mostrar_df = opcion == "s"
+
+display_results(resultados, as_dataframe=mostrar_df)
