@@ -10,6 +10,11 @@ def display_results(resultados, as_dataframe=True):
         print(resultados)
         return resultados
 
+def export_results_to_csv(resultados, filename="resultados_fuzzy_match.csv"):
+    df = pd.DataFrame(resultados)
+    df.to_csv(filename, index=False)
+    print(f"Archivo CSV '{filename}' creado correctamente.")
+
 params_dict = {
     # Usuarios
     "server": "localhost",
@@ -34,4 +39,7 @@ resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
 opcion = input("¿Mostrar resultados como DataFrame? (s/n): ").strip().lower()
 mostrar_df = opcion == "s"
 
-display_results(resultados, as_dataframe=mostrar_df)
+df = display_results(resultados, as_dataframe=mostrar_df)
+
+# Exportar resultados a CSV
+export_results_to_csv(resultados)
