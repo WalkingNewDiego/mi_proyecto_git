@@ -1,7 +1,7 @@
 from rapidfuzz import process, fuzz
 import mysql.connector
 import pandas as pd
-import os 
+import os
 
 def connect_to_mysql(host, database, username, password, port=3306):
     connection = mysql.connector.connect(
@@ -82,7 +82,6 @@ def execute_dynamic_matching(params_dict, score_cutoff=0):
     src_cols = ", ".join(params_dict['src_dest_mappings'].keys())
     dest_cols = ", ".join(params_dict['src_dest_mappings'].values())
 
-    db = params_dict.get("database", "")
     sql_source = f"SELECT {src_cols} FROM {params_dict['sourceDatabase']}.{params_dict['sourceTable']}"
     sql_dest   = f"SELECT {dest_cols} FROM {params_dict['destDatabase']}.{params_dict['destTable']}"
 
@@ -130,28 +129,6 @@ def display_results(resultados, as_dataframe=True, selected_columns=None, num_ro
     else:
         print(df.to_dict(orient="records"))
 
-
-def display_results(resultados, as_dataframe=True, num_columns=None, num_rows=None):
-    """
-    Display resultados as a DataFrame or dictionary.
-    :param resultados: The result data (list of dicts or dict)
-    :param as_dataframe: If True, display as DataFrame; else as dictionary
-    :param num_columns: Number of columns to display (int or None for all)
-    :param num_rows: Number of rows to display (int or None for all)
-    """
-    df = pd.DataFrame(resultados)
-
-    if num_columns is not None and num_columns > 0:
-        df = df.iloc[:, :num_columns]
-
-    if num_rows is not None and num_rows > 0:
-        df = df.head(num_rows)
-
-    if as_dataframe:
-        print(df)
-    else:
-        print(df.to_dict(orient="records"))
-
 def _prepare_dataframe(resultados, selected_columns=None, rename_map=None, force_all_rows=False):
     """Helper to prepare DataFrame with score %, full_name and selected/renamed columns"""
     if not resultados:
@@ -163,9 +140,11 @@ def _prepare_dataframe(resultados, selected_columns=None, rename_map=None, force
     if "score" in df.columns:
         df["score"] = df["score"].astype(float) * 100
 
-    # Crear columna full_name si existen nombre y apellido
+    # Crear columna full_name si existen nombre y apellido o first_name y last_name
     if "nombre" in df.columns and "apellido" in df.columns:
         df["full_name"] = df["nombre"].astype(str) + " " + df["apellido"].astype(str)
+    elif "first_name" in df.columns and "last_name" in df.columns:
+        df["full_name"] = df["first_name"].astype(str) + " " + df["last_name"].astype(str)
 
     # Filtrar columnas seleccionadas, más score y full_name
     if selected_columns:
@@ -184,19 +163,14 @@ def _prepare_dataframe(resultados, selected_columns=None, rename_map=None, force
     if rename_map:
         df.rename(columns=rename_map, inplace=True)
 
-    # Limitar filas solo si no es export matched/unmatched
-    if not force_all_rows and "num_rows" in locals():
-        pass  # se maneja desde caller
-
     return df
-
 
 def export_results_to_csv(resultados, filename, selected_columns=None, rename_map=None, num_rows=None, force_all_rows=False):
     try:
         df = _prepare_dataframe(resultados, selected_columns, rename_map, force_all_rows)
 
         if df.empty or df.shape[1] == 0:
-            print("No valid data to export.")
+            print("No hay datos válidos para exportar.")
             return
 
         if not filename.endswith(".csv"):
@@ -211,18 +185,17 @@ def export_results_to_csv(resultados, filename, selected_columns=None, rename_ma
             df = df.head(num_rows)
 
         df.to_csv(filepath, index=False)
-        print(f"CSV exported successfully: {filepath}")
+        print(f"CSV exportado correctamente: {filepath}")
 
     except Exception as e:
-        print(f"Error exporting CSV: {e}")
-
+        print(f"Error exportando CSV: {e}")
 
 def export_results_to_xlsx(resultados, filename, selected_columns=None, rename_map=None, num_rows=None, force_all_rows=False):
     try:
         df = _prepare_dataframe(resultados, selected_columns, rename_map, force_all_rows)
 
         if df.empty or df.shape[1] == 0:
-            print("No valid data to export.")
+            print("No hay datos válidos para exportar.")
             return
 
         if not filename.endswith(".xlsx"):
@@ -237,23 +210,17 @@ def export_results_to_xlsx(resultados, filename, selected_columns=None, rename_m
             df = df.head(num_rows)
 
         df.to_excel(filepath, index=False, engine="openpyxl")
-        print(f"Excel exported successfully: {filepath}")
+        print(f"Excel exportado correctamente: {filepath}")
 
     except ImportError:
-        print("Missing dependency: install openpyxl (pip install openpyxl).")
+        print("Falta la dependencia: instala openpyxl (pip install openpyxl).")
     except Exception as e:
-        print(f"Error exporting Excel: {e}")
-
-
-
-# --------------------
-# IMPORT FUNCTION
-# --------------------
+        print(f"Error exportando Excel: {e}")
 
 def separate_matched_records(resultados, threshold=97.0):
     df = pd.DataFrame(resultados)
     if "score" not in df.columns:
-        print("No 'score' column found.")
+        print("No se encontró la columna 'score'.")
         return pd.DataFrame(), pd.DataFrame()
 
     matched = df[df["score"] * 100 >= threshold]
@@ -261,11 +228,10 @@ def separate_matched_records(resultados, threshold=97.0):
 
     return matched, unmatched
 
-
 def export_matched_or_unmatched(resultados, selected_columns=None, rename_map=None, threshold=97.0):
     matched_df, unmatched_df = separate_matched_records(resultados, threshold)
 
-    choice_group = input("Do you want to export 'matched' or 'unmatched' results? ").strip().lower()
+    choice_group = input("¿Quieres exportar los resultados 'matched' (coincidentes) o 'unmatched' (no coincidentes)? ").strip().lower()
     if choice_group == "matched":
         df_to_export = matched_df
         default_name_csv = "matched_results.csv"
@@ -275,17 +241,17 @@ def export_matched_or_unmatched(resultados, selected_columns=None, rename_map=No
         default_name_csv = "unmatched_results.csv"
         default_name_xlsx = "unmatched_results.xlsx"
     else:
-        print("Invalid choice. No file exported.")
+        print("Opción inválida. No se exportó ningún archivo.")
         return
 
     if df_to_export.empty:
-        print(f"No {choice_group} records found to export.")
+        print(f"No se encontraron registros {choice_group} para exportar.")
         return
 
-    export_choice = input("Do you want to export as 'csv' or 'xlsx'? ").strip().lower()
+    export_choice = input("¿Quieres exportar como 'csv' o 'xlsx'? ").strip().lower()
 
     if export_choice == "csv":
-        filename = input(f"Enter the filename for CSV (default: {default_name_csv}): ").strip()
+        filename = input(f"Escribe el nombre del archivo CSV (por defecto: {default_name_csv}): ").strip()
         if not filename:
             filename = default_name_csv
         export_results_to_csv(df_to_export.to_dict(orient="records"), filename,
@@ -293,7 +259,7 @@ def export_matched_or_unmatched(resultados, selected_columns=None, rename_map=No
                               num_rows=None, force_all_rows=True)
 
     elif export_choice == "xlsx":
-        filename = input(f"Enter the filename for Excel (default: {default_name_xlsx}): ").strip()
+        filename = input(f"Escribe el nombre del archivo Excel (por defecto: {default_name_xlsx}): ").strip()
         if not filename:
             filename = default_name_xlsx
         export_results_to_xlsx(df_to_export.to_dict(orient="records"), filename,
@@ -301,33 +267,33 @@ def export_matched_or_unmatched(resultados, selected_columns=None, rename_map=No
                                num_rows=None, force_all_rows=True)
 
     else:
-        print("Invalid format. No file exported.")
+        print("Formato inválido. No se exportó ningún archivo.")
 
 def import_file_and_insert_to_db(file_path, db_config):
     table_name = "archivo_exportado"  # Tabla fija
 
     try:
-        # Check file existence
+        # Verificar existencia del archivo
         if not os.path.exists(file_path):
-            print(f"File not found: {file_path}")
+            print(f"Archivo no encontrado: {file_path}")
             return
 
-        # Read file
+        # Leer archivo
         if file_path.endswith(".csv"):
             df = pd.read_csv(file_path)
         elif file_path.endswith(".xlsx"):
             df = pd.read_excel(file_path)
         else:
-            print("Unsupported file type. Only CSV and XLSX are allowed.")
+            print("Tipo de archivo no soportado. Solo se permiten CSV y XLSX.")
             return
 
         if df.empty:
-            print("The file is empty, no data imported.")
+            print("El archivo está vacío, no se importaron datos.")
             return
 
-        print(f"File imported successfully with {len(df)} rows and {len(df.columns)} columns.")
+        print(f"Archivo importado correctamente con {len(df)} filas y {len(df.columns)} columnas.")
 
-        # Connect to DB
+        # Conectar a la base de datos
         try:
             conn = mysql.connector.connect(
                 host=db_config["host"],
@@ -336,41 +302,41 @@ def import_file_and_insert_to_db(file_path, db_config):
                 database=db_config["database"]
             )
         except mysql.connector.Error as err:
-            print(f"Database connection error: {err}")
+            print(f"Error de conexión a la base de datos: {err}")
             return
 
         cursor = conn.cursor()
 
-        # Build CREATE TABLE dynamically
+        # Eliminar la tabla si existe para evitar conflictos de columnas
+        try:
+            cursor.execute(f"DROP TABLE IF EXISTS `{table_name}`")
+        except mysql.connector.Error as err:
+            print(f"Error eliminando la tabla `{table_name}`: {err}")
+            conn.close()
+            return
+
+        # Crear la tabla dinámicamente
         create_cols = [f"`{col}` TEXT" for col in df.columns]
-        create_stmt = f"CREATE TABLE IF NOT EXISTS `{table_name}` ({', '.join(create_cols)})"
+        create_stmt = f"CREATE TABLE `{table_name}` ({', '.join(create_cols)})"
 
         try:
             cursor.execute(create_stmt)
         except mysql.connector.Error as err:
-            print(f"Error creating table `{table_name}`: {err}")
+            print(f"Error creando la tabla `{table_name}`: {err}")
             conn.close()
             return
 
-        # Truncate table before inserting new data
-        try:
-            cursor.execute(f"TRUNCATE TABLE `{table_name}`")
-        except mysql.connector.Error as err:
-            print(f"Error truncating table `{table_name}`: {err}")
-            conn.close()
-            return
-
-        # Insert data row by row
+        # Insertar datos fila por fila
         cols = ", ".join([f"`{c}`" for c in df.columns])
         placeholders = ", ".join(["%s"] * len(df.columns))
         insert_stmt = f"INSERT INTO `{table_name}` ({cols}) VALUES ({placeholders})"
 
         try:
             for _, row in df.iterrows():
-                cursor.execute(insert_stmt, tuple(row.fillna("").values))  # Replace NaN with ""
+                cursor.execute(insert_stmt, tuple(row.fillna("").values))  # Reemplaza NaN por ""
             conn.commit()
         except mysql.connector.Error as err:
-            print(f"Error inserting data: {err}")
+            print(f"Error insertando datos: {err}")
             conn.rollback()
             cursor.close()
             conn.close()
@@ -378,7 +344,7 @@ def import_file_and_insert_to_db(file_path, db_config):
 
         cursor.close()
         conn.close()
-        print(f"Data inserted into table `{table_name}` successfully!")
+        print(f"¡Datos insertados en la tabla `{table_name}` correctamente!")
 
     except Exception as e:
-        print(f"Unexpected error during import: {e}")
+        print(f"Error inesperado durante la importación: {e}")

@@ -1,0 +1,11 @@
+nombre,apellido,email,match_query,match_result,score,match_result_values,destTable,sourceTable,full_name
+Janet,Norris,janet.norris1@example.com,JanetNorrisjanet.norris1@example.com,,0.0,{},Usuarios,Clientes,Janet Norris
+Michael,Jones,michael.jones2@example.com,MichaelJonesmichael.jones2@example.com,,0.0,{},Usuarios,Clientes,Michael Jones
+Donna,Nelson,donna.nelson3@example.com,DonnaNelsondonna.nelson3@example.com,,0.0,{},Usuarios,Clientes,Donna Nelson
+Gregory,Gross,gregory.gross4@example.com,GregoryGrossgregory.gross4@example.com,,0.0,{},Usuarios,Clientes,Gregory Gross
+Herbert,Davis,herbert.davis5@example.com,HerbertDavisherbert.davis5@example.com,,0.0,{},Usuarios,Clientes,Herbert Davis
+Danielle,Clarke,danielle.clarke6@example.com,DanielleClarkedanielle.clarke6@example.com,,0.0,{},Usuarios,Clientes,Danielle Clarke
+Christian,Martin,christian.martin7@example.com,ChristianMartinchristian.martin7@example.com,,0.0,{},Usuarios,Clientes,Christian Martin
+Annette,Hartman,annette.hartman8@example.com,AnnetteHartmanannette.hartman8@example.com,,0.0,{},Usuarios,Clientes,Annette Hartman
+Tim,Cabrera,tim.cabrera9@example.com,TimCabreratim.cabrera9@example.com,,0.0,{},Usuarios,Clientes,Tim Cabrera
+Catherine,Holmes,catherine.holmes10@example.com,CatherineHolmescatherine.holmes10@example.com,,0.0,{},Usuarios,Clientes,Catherine Holmes
