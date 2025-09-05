@@ -1,83 +1,113 @@
-from fuzzy_match_utils import execute_dynamic_matching
+import fuzzy_match_utils
 import pandas as pd
-import os
 
-def display_results(resultados, as_dataframe=True):
-    if as_dataframe:
-        df = pd.DataFrame(resultados)
-        print(df)
-        return df
-    else:
-        print(resultados)
-        return resultados
-
-def export_results(df, filename, filetype="csv", limit=None):
-    # Validar resultados vacíos
-    if df.empty:
-        print("No hay datos para exportar. El archivo no se ha creado.")
-        return False
-
-    # Limitar número de filas si se especifica
-    if limit is not None and isinstance(limit, int):
-        if limit == 0:
-            print("No es posible exportar 0 filas. Por favor, intenta de nuevo con un número mayor a 0.")
-            return False
-        df = df.head(limit)
-
-    # Definir carpeta según tipo de archivo
-    folder = "csv" if filetype == "csv" else "xlsx"
-    base_filename = os.path.basename(filename)
-    if not os.path.exists(folder):
-        os.makedirs(folder, exist_ok=True)
-    final_path = os.path.join(folder, base_filename)
-    if not final_path.endswith(f".{filetype}"):
-        final_path += f".{filetype}"
-
-    if filetype == "csv":
-        df.to_csv(final_path, index=False)
-        print(f"Archivo CSV '{final_path}' creado correctamente.")
-    elif filetype == "xlsx":
-        df.to_excel(final_path, index=False)
-        print(f"Archivo Excel '{final_path}' creado correctamente.")
-    else:
-        print("Tipo de archivo no soportado.")
-        return False
-    return True
-
+# -------------------------
+# Configuración y ejecución
+# -------------------------
 params_dict = {
-    # Usuarios
     "server": "localhost",
-    "database": "dbo",
+    "port": 3306,
     "username": "root",
     "password": "",
-    # Clientes
-    "server2": "localhost",
-    "database2": "crm",
-    "sourceSchema": "dbo",
-    "sourceTable": "Usuarios",
-    "destSchema": "crm",
-    "destTable": "Clientes",
+    "sourceDatabase": "crm",
+    "sourceTable": "Clientes",
+    "destDatabase": "dbo",
+    "destTable": "Usuarios",
     "src_dest_mappings": {
+        "nombre": "first_name",
+        "apellido": "last_name",
         "email": "email"
     }
 }
+resultados = fuzzy_match_utils.execute_dynamic_matching(params_dict, score_cutoff=80)
 
-resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
+user_choice = input("¿Cómo quieres mostrar los resultados? Escribe 'df' para DataFrame o 'dict' para diccionario: ").strip().lower()
+as_dataframe = True if user_choice == 'df' else False
 
-opcion = input("¿Mostrar resultados como DataFrame? (s/n): ").strip().lower()
-mostrar_df = opcion == "s"
-df = display_results(resultados, as_dataframe=mostrar_df)
+try:
+    num_rows = int(input("¿Cuántas filas quieres mostrar/exportar? Ingresa un número: ").strip())
+except ValueError:
+    num_rows = None
 
-filename = input("Escribe el nombre del archivo para exportar (ejemplo: resultados_fuzzy_match): ").strip()
-filetype = input("¿Exportar como CSV o Excel? (csv/xlsx): ").strip().lower()
+if num_rows == 0:
+    print("El archivo está vacío. No se mostrarán ni exportarán resultados.")
+else:
+    fuzzy_match_utils.display_results(resultados, as_dataframe=as_dataframe, num_rows=num_rows)
 
-while True:
-    try:
-        limit_input = input("¿Cuántas filas quieres exportar? (Deja vacío para todas): ").strip()
-        limit = int(limit_input) if limit_input else None
-    except ValueError:
-        limit = None
+    # Mostrar columnas disponibles y pedir selección
 
-    success = export_results(df, filename, filetype=filetype, limit=limit)
-    if success or (limit is None):
-        break
+    columnas_disponibles = list(pd.DataFrame(resultados).columns)
+    print("\nColumnas disponibles para exportar:")
+    print(", ".join(columnas_disponibles))
+
+    columnas_input = input("¿Qué columnas quieres exportar? Usa 'columna:nombreNuevo' o solo 'columna'. Ejemplo: nombre:Nombre,email:Correo\n").strip()
+
+    rename_map = {}
+    if columnas_input:
+        selected_columns = []
+        for col in columnas_input.split(","):
+            parts = col.strip().split(":")
+            original = parts[0].strip()
+            if original in columnas_disponibles:
+                selected_columns.append(original)
+                if len(parts) == 2:
+                    rename_map[original] = parts[1].strip()
+    else:
+        selected_columns = None
+        rename_map = None
+
+    export_choice = input("¿Quieres exportar los resultados? Escribe 'csv' para CSV, 'xlsx' para Excel, o 'n' para no exportar: ").strip().lower()
+    if export_choice == 'csv':
+        filename = input("Escribe el nombre del archivo CSV (por defecto: resultados.csv): ").strip()
+        if not filename:
+            filename = "resultados.csv"
+        fuzzy_match_utils.export_results_to_csv(resultados, filename, selected_columns=selected_columns, rename_map=rename_map, num_rows=num_rows)
+    elif export_choice == 'xlsx':
+        filename = input("Escribe el nombre del archivo Excel (por defecto: resultados.xlsx): ").strip()
+        if not filename:
+            filename = "resultados.xlsx"
+        fuzzy_match_utils.export_results_to_xlsx(
+            resultados,
+            filename,
+            selected_columns=selected_columns,
+            rename_map=rename_map,
+            num_rows=num_rows
+        )
+
+matched, unmatched = fuzzy_match_utils.separate_matched_records(resultados, threshold=97.0)
+
+print("\nRegistros coincidentes (>=97%):")
+print(matched)
+
+print("\nRegistros no coincidentes (<97%):")
+print(unmatched)
+
+fuzzy_match_utils.export_matched_or_unmatched(
+    resultados,
+    selected_columns=selected_columns,
+    rename_map=rename_map,
+)
+
+action = input("¿Quieres 'exportar' resultados o 'importar' un archivo a la base de datos? Escribe 'exportar' o 'importar': ").strip().lower()
+
+if action == "exportar":
+    fuzzy_match_utils.export_matched_or_unmatched(
+        resultados,
+        selected_columns=selected_columns,
+        rename_map=rename_map
+    )
+
+elif action == "importar":
+    file_path = input("Escribe la ruta del archivo a importar (CSV/XLSX): ").strip()
+
+    db_config = {
+        "host": "localhost",
+        "user": "root",
+        "password": "",
+        "database": "crm"   # <-- cámbialo si usas otra base
+    }
+
+    fuzzy_match_utils.import_file_and_insert_to_db(file_path, db_config)
+
+else:
+    print("Opción inválida. Saliendo.")
