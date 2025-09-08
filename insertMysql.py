@@ -7,7 +7,7 @@ def insert_clientes_from_csv():
     conn = mysql.connector.connect(
         host="localhost",      # Cambia si tu servidor no es lh
         user="root",           # Usuario de MySQL
-        password="",           # Contraseña de MySQL
+        password="1234",           # Contraseña de MySQL
         database="crm"         # Base de datos
     )
     cursor = conn.cursor()
@@ -51,7 +51,7 @@ def insert_usuarios_from_csv():
     conn = mysql.connector.connect(
         host="localhost",      
         user="root",           
-        password="",           
+        password="1234",           
         database="dbo"         
     )
     cursor = conn.cursor()

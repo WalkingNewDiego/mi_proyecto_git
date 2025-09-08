@@ -53,3 +53,14 @@ se elimino la siguiente linea sin utilizar
 
 se agrego alias a import mysql.connector as mc
 y se modifico respectivamente las lineas de acuerdo al nuevo nombre
+
+
+viernes 5 de septiembre del 2025 - victor jireh
+se creo store_procedure con el script sql a ejecutar en mysqlworkbench
+se actualizo el insert para ser compatible y eficientes con el store procedure
+tambien se actualizo un poco la funcion execute_dynamic_matching
+
+
+
+
+

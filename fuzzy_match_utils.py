@@ -68,11 +68,11 @@ def fuzzy_match(queryRecord, choices, score_cutoff=0):
 
 def execute_dynamic_matching(params_dict, score_cutoff=0):
     conn = connect_to_mysql(
-        host=params_dict.get("server", "localhost"),
+        host=params_dict.get("server",""),
         database=params_dict.get("database", ""),
-        username=params_dict.get("username", "root"),
+        username=params_dict.get("username", ""),
         password=params_dict.get("password", ""),
-        port=params_dict.get("port", 3306)
+       # port=params_dict.get("port", 3306)
     )
     cursor = conn.cursor(dictionary=True)
 
@@ -333,7 +333,15 @@ def import_file_and_insert_to_db(file_path, db_config):
 
         try:
             for _, row in df.iterrows():
-                cursor.execute(insert_stmt, tuple(row.fillna("").values))  # Reemplaza NaN por ""
+                cursor.callproc("sp_insertar_archivo_origen_destino_001", [
+                    row["username"],
+                    row["first_name"],
+                    row["last_name"],
+                    row["email"],
+                    row["password_hash"],
+                    row["rol"],
+                    str(row["fecha_creacion"])  # Convertir a string si SP usa TEXT
+                ])
             conn.commit()
         except mysql.connector.Error as err:
             print(f"Error insertando datos: {err}")
