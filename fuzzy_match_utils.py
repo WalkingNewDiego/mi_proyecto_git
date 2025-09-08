@@ -326,7 +326,7 @@ def import_file_and_insert_to_db(file_path, db_config):
             conn.close()
             return
 
-        # Insertar datos fila por fila
+        # Insertar datos fila por fila ...
         cols = ", ".join([f"`{c}`" for c in df.columns])
         placeholders = ", ".join(["%s"] * len(df.columns))
         insert_stmt = f"INSERT INTO `{table_name}` ({cols}) VALUES ({placeholders})"
